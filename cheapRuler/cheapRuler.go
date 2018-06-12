@@ -5,37 +5,46 @@ import (
 	"math"
 )
 
-// Ruler is the interface implemented by ruler objects.
+// CheapRuler is the interface implemented by ruler objects.
 type CheapRuler interface {
 	along(l Line, dist float64) Point
 	area(p Polygon) float64
 	bearing(a Point, b Point) float64
 	destination(p Point, d float64, b float64) Point
 	distance(a Point, b Point) float64
-	LineDistance(l Line) float64
-	LineSlice(start Point, end Point, l Line) Line
+	lineDistance(l Line) float64
+	lineSlice(start Point, end Point, l Line) Line
 	offset(p Point, dx float64, dy float64) float64
-	PointOnLine(l Line, p Point) PointOnLine
+	pointOnLine(l Line, p Point) PointOnLine
 }
 
+// Ruler is the type of objects returned when using NewRuler
 type Ruler struct {
 	kx, ky float64
 }
 
+// Point is a [longitude, latitude] array
 type Point [2]float64
 
+// Bbox is a [southwestLon, southwestLat, northeastLon, northeastLat] array
 type Bbox [4]float64
 
+// Line is a slice of points
 type Line []Point
 
+// Polygon is a slice of lines (one outer ring, then holes)
 type Polygon []Line
 
+// PointOnLine is the struct returned by the ruler.PointOnLine method, where point is closest point on the line
+// from the given point, index is the start index of the segment with the closest point,
+// and t is a parameter from 0 to 1 that indicates where the closest point is on that segment.
 type PointOnLine struct {
 	point Point
 	index int
 	t     float64
 }
 
+// Units provides convenience conversions from kilometers to different distance units.
 var Units = map[string]float64{
 	"kilometers":    1,
 	"miles":         1000 / 1609.344,
@@ -47,7 +56,8 @@ var Units = map[string]float64{
 	"inches":        1000 / 0.0254,
 }
 
-// CheapRuler instantiates a new ruler from a latitude and a unit. The default unit is kilometers.
+// NewRuler instantiates a new ruler from a latitude and a unit.
+// An error will be returned if the unit provided is not in Units, and the default "kilometers" will be used.
 func NewRuler(lat float64, unit string) (Ruler, error) {
 	var m float64
 	var e error = nil
@@ -72,12 +82,14 @@ func NewRuler(lat float64, unit string) (Ruler, error) {
 	return Ruler{kx: kx, ky: ky}, e
 }
 
+// distance gives the distance in ruler units between two points.
 func (r Ruler) distance(a Point, b Point) float64 {
 	dx := (a[0] - b[0]) * r.kx
 	dy := (a[1] - b[1]) * r.ky
 	return math.Sqrt(dx*dx + dy*dy)
 }
 
+// bearing gives the bearing in degrees from north between two points.
 func (r Ruler) bearing(a Point, b Point) float64 {
 	dx := (a[0] - b[0]) * r.kx
 	dy := (a[1] - b[1]) * r.ky
@@ -92,11 +104,13 @@ func (r Ruler) bearing(a Point, b Point) float64 {
 	return bearing
 }
 
+// offset returns a point located dx, dy ruler units from the given point.
 func (r Ruler) offset(p Point, dx float64, dy float64) Point {
 	return Point{p[0] + dx/r.kx, p[1] + dy/r.ky}
 }
 
-func (r Ruler) LineDistance(l Line) float64 {
+// lineDistance returns the total distance of a linestring, in ruler units.
+func (r Ruler) lineDistance(l Line) float64 {
 	var distance float64 = 0
 
 	for i := 0; i < len(l)-1; i++ {
@@ -105,6 +119,7 @@ func (r Ruler) LineDistance(l Line) float64 {
 	return distance
 }
 
+// area returns the total area, in squared ruler units, of a polygon.
 func (r Ruler) area(p Polygon) float64 {
 	var sum float64 = 0
 
@@ -122,6 +137,7 @@ func (r Ruler) area(p Polygon) float64 {
 	return (math.Abs(sum) / 2) * r.kx * r.ky
 }
 
+// along returns the point located at the given distance along the given line, in ruler units.
 func (r Ruler) along(l Line, dist float64) Point {
 	var sum float64 = 0
 
@@ -142,7 +158,10 @@ func (r Ruler) along(l Line, dist float64) Point {
 	return l[len(l)-1]
 }
 
-func (r Ruler) PointOnLine(l Line, p Point) PointOnLine {
+// pointOnLine snaps the given point on the line. The returned PointOnLine object
+// gives the point coordinates, the index of the segment in the line where the point landed,
+// and a proportion value that indicates where on that segment the point is located.
+func (r Ruler) pointOnLine(l Line, p Point) PointOnLine {
 	var minDist float64 = math.Inf(1)
 	var minX, minY, minT, x, y, dx, dy, t float64
 	var minI int
@@ -188,9 +207,11 @@ func (r Ruler) PointOnLine(l Line, p Point) PointOnLine {
 	}
 }
 
-func (r Ruler) LineSlice(start Point, end Point, l Line) Line {
-	p1 := r.PointOnLine(l, start)
-	p2 := r.PointOnLine(l, end)
+// lineSlice returns the portion of the given line that lies between provided start
+// and end points (the points being snapped on the line).
+func (r Ruler) lineSlice(start Point, end Point, l Line) Line {
+	p1 := r.pointOnLine(l, start)
+	p2 := r.pointOnLine(l, end)
 
 	if p1.index > p2.index || (p1.index == p2.index && p1.t < p2.t) {
 		p1, p2 = p2, p1
@@ -216,7 +237,9 @@ func (r Ruler) LineSlice(start Point, end Point, l Line) Line {
 	return slice
 }
 
-func (r Ruler) LineSliceAlong(start float64, stop float64, l Line) Line {
+// lineSliceAlong returns the portion of the given line that lies between provided start
+// and end distances, in ruler units.
+func (r Ruler) lineSliceAlong(start float64, stop float64, l Line) Line {
 	var sum float64 = 0
 	var slice []Point
 
@@ -243,6 +266,8 @@ func (r Ruler) LineSliceAlong(start float64, stop float64, l Line) Line {
 	return slice
 }
 
+// bufferPoint returns a Bbox that contains the given point with a buffer margin given
+// in ruler units.
 func (r Ruler) bufferPoint(p Point, buffer float64) Bbox {
 	v := buffer / r.kx
 	h := buffer / r.ky
@@ -255,6 +280,8 @@ func (r Ruler) bufferPoint(p Point, buffer float64) Bbox {
 	}
 }
 
+// bufferPoint returns a Bbox that contains the given bbox with a buffer margin given
+// in ruler units.
 func (r Ruler) bufferBbox(b Bbox, buffer float64) Bbox {
 	v := buffer / r.kx
 	h := buffer / r.ky
@@ -267,6 +294,7 @@ func (r Ruler) bufferBbox(b Bbox, buffer float64) Bbox {
 	}
 }
 
+// insideBbox returns a boolean value, whether the given point is inside the given bbox.
 func (r Ruler) insideBbox(p Point, b Bbox) bool {
 	return p[0] >= b[0] &&
 		p[0] <= b[2] &&
@@ -274,6 +302,7 @@ func (r Ruler) insideBbox(p Point, b Bbox) bool {
 		p[1] <= b[3]
 }
 
+// interpolate returns a point located at the given proportion t between the points a and b.
 func interpolate(a Point, b Point, t float64) Point {
 	dx := b[0] - a[0]
 	dy := b[1] - a[1]
