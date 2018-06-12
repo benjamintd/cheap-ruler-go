@@ -7,15 +7,16 @@ import (
 
 // CheapRuler is the interface implemented by ruler objects.
 type CheapRuler interface {
-	along(l Line, dist float64) Point
-	area(p Polygon) float64
-	bearing(a Point, b Point) float64
-	destination(p Point, d float64, b float64) Point
-	distance(a Point, b Point) float64
-	lineDistance(l Line) float64
-	lineSlice(start Point, end Point, l Line) Line
-	offset(p Point, dx float64, dy float64) float64
-	pointOnLine(l Line, p Point) PointOnLine
+	Along(l Line, dist float64) Point
+	Area(p Polygon) float64
+	Bearing(a Point, b Point) float64
+	Destination(p Point, d float64, b float64) Point
+	Distance(a Point, b Point) float64
+	LineDistance(l Line) float64
+	LineSlice(start Point, end Point, l Line) Line
+	LineSliceAlong(start float64, stop float64, l Line) Line
+	Offset(p Point, dx float64, dy float64) float64
+	PointOnLine(l Line, p Point) PointOnLine
 }
 
 // Ruler is the type of objects returned when using NewRuler
@@ -82,15 +83,15 @@ func NewRuler(lat float64, unit string) (Ruler, error) {
 	return Ruler{kx: kx, ky: ky}, e
 }
 
-// distance gives the distance in ruler units between two points.
-func (r Ruler) distance(a Point, b Point) float64 {
+// Distance gives the distance in ruler units between two points.
+func (r Ruler) Distance(a Point, b Point) float64 {
 	dx := (a[0] - b[0]) * r.kx
 	dy := (a[1] - b[1]) * r.ky
 	return math.Sqrt(dx*dx + dy*dy)
 }
 
-// bearing gives the bearing in degrees from north between two points.
-func (r Ruler) bearing(a Point, b Point) float64 {
+// Bearing gives the bearing in degrees from north between two points.
+func (r Ruler) Bearing(a Point, b Point) float64 {
 	dx := (a[0] - b[0]) * r.kx
 	dy := (a[1] - b[1]) * r.ky
 	if dx == 0 && dy == 0 {
@@ -104,23 +105,29 @@ func (r Ruler) bearing(a Point, b Point) float64 {
 	return bearing
 }
 
-// offset returns a point located dx, dy ruler units from the given point.
-func (r Ruler) offset(p Point, dx float64, dy float64) Point {
+// Offset returns a point located dx, dy ruler units from the given point.
+func (r Ruler) Offset(p Point, dx float64, dy float64) Point {
 	return Point{p[0] + dx/r.kx, p[1] + dy/r.ky}
 }
 
-// lineDistance returns the total distance of a linestring, in ruler units.
-func (r Ruler) lineDistance(l Line) float64 {
+// LineDistance returns the total distance of a linestring, in ruler units.
+func (r Ruler) LineDistance(l Line) float64 {
 	var distance float64 = 0
 
 	for i := 0; i < len(l)-1; i++ {
-		distance += r.distance(l[i], l[i+1])
+		distance += r.Distance(l[i], l[i+1])
 	}
 	return distance
 }
 
-// area returns the total area, in squared ruler units, of a polygon.
-func (r Ruler) area(p Polygon) float64 {
+// Destination returns a new point given distance and bearing from the starting point.
+func (r Ruler) Destination(p Point, d float64, b float64) Point {
+	var a = b * math.Pi / 180
+	return r.Offset(p, math.Sin(a)*d, math.Cos(a)*d)
+}
+
+// Area returns the total area, in squared ruler units, of a polygon.
+func (r Ruler) Area(p Polygon) float64 {
 	var sum float64 = 0
 
 	for i := 0; i < len(p); i++ {
@@ -137,8 +144,8 @@ func (r Ruler) area(p Polygon) float64 {
 	return (math.Abs(sum) / 2) * r.kx * r.ky
 }
 
-// along returns the point located at the given distance along the given line, in ruler units.
-func (r Ruler) along(l Line, dist float64) Point {
+// Along returns the point located at the given distance along the given line, in ruler units.
+func (r Ruler) Along(l Line, dist float64) Point {
 	var sum float64 = 0
 
 	if dist <= 0 {
@@ -148,7 +155,7 @@ func (r Ruler) along(l Line, dist float64) Point {
 	for i := 0; i < len(l)-1; i++ {
 		p0 := l[i]
 		p1 := l[i+1]
-		d := r.distance(p0, p1)
+		d := r.Distance(p0, p1)
 		sum += d
 		if sum > dist {
 			return interpolate(p0, p1, (dist-(sum-d))/d)
@@ -158,10 +165,10 @@ func (r Ruler) along(l Line, dist float64) Point {
 	return l[len(l)-1]
 }
 
-// pointOnLine snaps the given point on the line. The returned PointOnLine object
+// PointOnLine snaps the given point on the line. The returned PointOnLine object
 // gives the point coordinates, the index of the segment in the line where the point landed,
 // and a proportion value that indicates where on that segment the point is located.
-func (r Ruler) pointOnLine(l Line, p Point) PointOnLine {
+func (r Ruler) PointOnLine(l Line, p Point) PointOnLine {
 	var minDist float64 = math.Inf(1)
 	var minX, minY, minT, x, y, dx, dy, t float64
 	var minI int
@@ -207,11 +214,11 @@ func (r Ruler) pointOnLine(l Line, p Point) PointOnLine {
 	}
 }
 
-// lineSlice returns the portion of the given line that lies between provided start
+// LineSlice returns the portion of the given line that lies between provided start
 // and end points (the points being snapped on the line).
-func (r Ruler) lineSlice(start Point, end Point, l Line) Line {
-	p1 := r.pointOnLine(l, start)
-	p2 := r.pointOnLine(l, end)
+func (r Ruler) LineSlice(start Point, end Point, l Line) Line {
+	p1 := r.PointOnLine(l, start)
+	p2 := r.PointOnLine(l, end)
 
 	if p1.index > p2.index || (p1.index == p2.index && p1.t < p2.t) {
 		p1, p2 = p2, p1
@@ -237,16 +244,16 @@ func (r Ruler) lineSlice(start Point, end Point, l Line) Line {
 	return slice
 }
 
-// lineSliceAlong returns the portion of the given line that lies between provided start
+// LineSliceAlong returns the portion of the given line that lies between provided start
 // and end distances, in ruler units.
-func (r Ruler) lineSliceAlong(start float64, stop float64, l Line) Line {
+func (r Ruler) LineSliceAlong(start float64, stop float64, l Line) Line {
 	var sum float64 = 0
 	var slice []Point
 
 	for i := 0; i < len(l)-1; i++ {
 		p0 := l[i]
 		p1 := l[i+1]
-		d := r.distance(p0, p1)
+		d := r.Distance(p0, p1)
 
 		sum += d
 
