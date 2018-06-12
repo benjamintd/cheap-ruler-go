@@ -26,11 +26,12 @@ import (
 func main() {
   // latitude of Paris
   ruler, _ := cheapRuler.NewRuler(48.8629, "meters")
-  a := Point{2.344808, 48.862851}
-  b := Point{2.352790, 48.862907}
+  a := [2]float64{2.344808, 48.862851}
+  b := [2]float64{2.352790, 48.862907}
   distance := ruler.Distance(a, b)
-  fmt.Println(dist)
+  fmt.Println(distance)
 }
+// 585.71 meters
 ```
 
 ## License
