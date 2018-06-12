@@ -1,3 +1,5 @@
+// A collection of very fast approximations to common geodesic measurements.
+// Useful for performance-sensitive code that measures things on a city scale.
 package cheapRuler
 
 import (
@@ -10,8 +12,11 @@ type CheapRuler interface {
 	Along(l Line, dist float64) Point
 	Area(p Polygon) float64
 	Bearing(a Point, b Point) float64
+	BufferBbox(b Bbox, buffer float64) Bbox
+	BufferPoint(p Point, buffer float64) Bbox
 	Destination(p Point, d float64, b float64) Point
 	Distance(a Point, b Point) float64
+	InsideBbox(p Point, b Bbox) bool
 	LineDistance(l Line) float64
 	LineSlice(start Point, end Point, l Line) Line
 	LineSliceAlong(start float64, stop float64, l Line) Line
@@ -275,7 +280,7 @@ func (r Ruler) LineSliceAlong(start float64, stop float64, l Line) Line {
 
 // bufferPoint returns a Bbox that contains the given point with a buffer margin given
 // in ruler units.
-func (r Ruler) bufferPoint(p Point, buffer float64) Bbox {
+func (r Ruler) BufferPoint(p Point, buffer float64) Bbox {
 	v := buffer / r.kx
 	h := buffer / r.ky
 
@@ -289,7 +294,7 @@ func (r Ruler) bufferPoint(p Point, buffer float64) Bbox {
 
 // bufferPoint returns a Bbox that contains the given bbox with a buffer margin given
 // in ruler units.
-func (r Ruler) bufferBbox(b Bbox, buffer float64) Bbox {
+func (r Ruler) BufferBbox(b Bbox, buffer float64) Bbox {
 	v := buffer / r.kx
 	h := buffer / r.ky
 
@@ -302,7 +307,7 @@ func (r Ruler) bufferBbox(b Bbox, buffer float64) Bbox {
 }
 
 // insideBbox returns a boolean value, whether the given point is inside the given bbox.
-func (r Ruler) insideBbox(p Point, b Bbox) bool {
+func (r Ruler) InsideBbox(p Point, b Bbox) bool {
 	return p[0] >= b[0] &&
 		p[0] <= b[2] &&
 		p[1] >= b[1] &&

@@ -22,3 +22,19 @@ func TestNewRuler(t *testing.T) {
 
 	t.Log("OK", ruler)
 }
+
+func TestDistance(t *testing.T) {
+	t.Log("ruler distance is correct")
+
+	ruler, _ := NewRuler(48.8629, "meters")
+	a := [2]float64{2.344808, 48.862851}
+	b := [2]float64{2.352790, 48.862907}
+	distance := ruler.Distance(a, b)
+	expected := 585.71
+
+	if math.Abs(distance - 585.71) > 1e-2 {
+		t.Fatalf("%f != %f", distance, expected)
+	}
+
+	t.Log("OK", distance)
+}

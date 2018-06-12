@@ -1,6 +1,6 @@
-[![godoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/benjamintd/cheap-ruler-go) [![Build Status](https://travis-ci.org/benjamintd/cheap-ruler-go.svg?branch=master)](https://travis-ci.org/benjamintd/cheap-ruler-go)
+[![godoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/benjamintd/cheap-ruler-go/cheapRuler) [![Build Status](https://travis-ci.org/benjamintd/cheap-ruler-go.svg?branch=master)](https://travis-ci.org/benjamintd/cheap-ruler-go)
 
-# cheap-ruler-go
+# cheapRuler
 
 A Golang port of @mourner's cheap-ruler:
 
@@ -35,4 +35,10 @@ func main() {
 ```
 
 ## License
+
 MIT
+
+## See also
+
+https://github.com/mapbox/cheap-ruler
+https://github.com/JamesMilnerUK/cheap-ruler-go
