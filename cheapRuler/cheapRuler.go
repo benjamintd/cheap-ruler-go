@@ -293,7 +293,7 @@ func (r Ruler) BufferPoint(p Point, buffer float64) Bbox {
 	}
 }
 
-// BufferPoint returns a Bbox that contains the given bbox with a buffer margin given
+// BufferBbox returns a Bbox that contains the given bbox with a buffer margin given
 // in ruler units.
 func (r Ruler) BufferBbox(b Bbox, buffer float64) Bbox {
 	v := buffer / r.kx

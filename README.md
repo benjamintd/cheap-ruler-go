@@ -1,4 +1,6 @@
-[![godoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/benjamintd/cheap-ruler-go/cheapRuler) [![Build Status](https://travis-ci.org/benjamintd/cheap-ruler-go.svg?branch=master)](https://travis-ci.org/benjamintd/cheap-ruler-go)
+[![godoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/benjamintd/cheap-ruler-go/cheapRuler)
+[![Build Status](https://travis-ci.org/benjamintd/cheap-ruler-go.svg?branch=master)](https://travis-ci.org/benjamintd/cheap-ruler-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/benjamintd/cheap-ruler-go)](https://goreportcard.com/report/github.com/benjamintd/cheap-ruler-go)
 
 # cheapRuler
 
