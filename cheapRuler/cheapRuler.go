@@ -1,4 +1,4 @@
-// A collection of very fast approximations to common geodesic measurements.
+// Package cheapRuler is a collection of very fast approximations to common geodesic measurements.
 // Useful for performance-sensitive code that measures things on a city scale.
 package cheapRuler
 
@@ -66,7 +66,7 @@ var Units = map[string]float64{
 // An error will be returned if the unit provided is not in Units, and the default "kilometers" will be used.
 func NewRuler(lat float64, unit string) (Ruler, error) {
 	var m float64
-	var e error = nil
+	var e error
 	if scale, ok := Units[unit]; ok {
 		m = scale
 	} else {
@@ -97,8 +97,8 @@ func (r Ruler) Distance(a Point, b Point) float64 {
 
 // Bearing gives the bearing in degrees from north between two points.
 func (r Ruler) Bearing(a Point, b Point) float64 {
-	dx := (a[0] - b[0]) * r.kx
-	dy := (a[1] - b[1]) * r.ky
+	dx := (b[0] - a[0]) * r.kx
+	dy := (b[1] - a[1]) * r.ky
 	if dx == 0 && dy == 0 {
 		return 0
 	}
@@ -117,7 +117,7 @@ func (r Ruler) Offset(p Point, dx float64, dy float64) Point {
 
 // LineDistance returns the total distance of a linestring, in ruler units.
 func (r Ruler) LineDistance(l Line) float64 {
-	var distance float64 = 0
+	var distance float64
 
 	for i := 0; i < len(l)-1; i++ {
 		distance += r.Distance(l[i], l[i+1])
@@ -133,7 +133,7 @@ func (r Ruler) Destination(p Point, d float64, b float64) Point {
 
 // Area returns the total area, in squared ruler units, of a polygon.
 func (r Ruler) Area(p Polygon) float64 {
-	var sum float64 = 0
+	var sum float64
 
 	for i := 0; i < len(p); i++ {
 		var ring Line = p[i]
@@ -151,7 +151,7 @@ func (r Ruler) Area(p Polygon) float64 {
 
 // Along returns the point located at the given distance along the given line, in ruler units.
 func (r Ruler) Along(l Line, dist float64) Point {
-	var sum float64 = 0
+	var sum float64
 
 	if dist <= 0 {
 		return l[0]
@@ -252,7 +252,7 @@ func (r Ruler) LineSlice(start Point, end Point, l Line) Line {
 // LineSliceAlong returns the portion of the given line that lies between provided start
 // and end distances, in ruler units.
 func (r Ruler) LineSliceAlong(start float64, stop float64, l Line) Line {
-	var sum float64 = 0
+	var sum float64
 	var slice []Point
 
 	for i := 0; i < len(l)-1; i++ {
@@ -268,6 +268,7 @@ func (r Ruler) LineSliceAlong(start float64, stop float64, l Line) Line {
 
 		if sum >= stop {
 			slice = append(slice, interpolate(p0, p1, (stop-(sum-d))/d))
+			return slice
 		}
 
 		if sum > start {
@@ -278,7 +279,7 @@ func (r Ruler) LineSliceAlong(start float64, stop float64, l Line) Line {
 	return slice
 }
 
-// bufferPoint returns a Bbox that contains the given point with a buffer margin given
+// BufferPoint returns a Bbox that contains the given point with a buffer margin given
 // in ruler units.
 func (r Ruler) BufferPoint(p Point, buffer float64) Bbox {
 	v := buffer / r.kx
@@ -292,7 +293,7 @@ func (r Ruler) BufferPoint(p Point, buffer float64) Bbox {
 	}
 }
 
-// bufferPoint returns a Bbox that contains the given bbox with a buffer margin given
+// BufferPoint returns a Bbox that contains the given bbox with a buffer margin given
 // in ruler units.
 func (r Ruler) BufferBbox(b Bbox, buffer float64) Bbox {
 	v := buffer / r.kx
@@ -306,7 +307,7 @@ func (r Ruler) BufferBbox(b Bbox, buffer float64) Bbox {
 	}
 }
 
-// insideBbox returns a boolean value, whether the given point is inside the given bbox.
+// InsideBbox returns a boolean value, whether the given point is inside the given bbox.
 func (r Ruler) InsideBbox(p Point, b Bbox) bool {
 	return p[0] >= b[0] &&
 		p[0] <= b[2] &&
